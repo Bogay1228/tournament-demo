@@ -12,12 +12,15 @@
 
         <div class="field">
           <label>參賽人數</label>
-          <div class="counter">
-            <button @click="decreaseCount" :disabled="playerCount <= 2">－</button>
-            <span class="count-display">{{ playerCount }}</span>
-            <button @click="increaseCount" :disabled="playerCount >= 64">＋</button>
-          </div>
-          <p class="hint">實際 bracket 大小：{{ bracketSize }} 人（2 的冪次）</p>
+          <input
+            type="number"
+            v-model.number="playerCount"
+            min="2"
+            max="64"
+            class="count-input"
+            @input="clampCount"
+          />
+          <p class="hint">2 ~ 64 人 · 實際 bracket 大小：{{ bracketSize }} 人（2 的冪次）</p>
         </div>
 
         <div class="field">
@@ -88,12 +91,10 @@ const bracketSize = computed(() => {
   return size
 })
 
-function decreaseCount() {
-  if (playerCount.value > 2) playerCount.value--
-}
-
-function increaseCount() {
-  if (playerCount.value < 64) playerCount.value++
+function clampCount() {
+  if (!playerCount.value || playerCount.value < 2) playerCount.value = 2
+  if (playerCount.value > 64) playerCount.value = 64
+  playerCount.value = Math.floor(playerCount.value)
 }
 
 async function generate(shuffle = false) {
@@ -239,44 +240,27 @@ body {
   margin-bottom: 12px;
 }
 
-.counter {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.counter button {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid #45475a;
+.count-input {
+  width: 120px;
+  padding: 10px 14px;
   background: #181825;
-  color: #cdd6f4;
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.counter button:hover:not(:disabled) {
-  background: #313244;
-  border-color: #6366f1;
-  color: #a6e3a1;
-}
-
-.counter button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.count-display {
-  font-size: 36px;
-  font-weight: 800;
+  border: 1px solid #45475a;
+  border-radius: 10px;
   color: #cba6f7;
-  min-width: 64px;
+  font-size: 24px;
+  font-weight: 700;
   text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.count-input:focus {
+  border-color: #6366f1;
+}
+
+.count-input::-webkit-inner-spin-button,
+.count-input::-webkit-outer-spin-button {
+  opacity: 1;
 }
 
 .hint {
