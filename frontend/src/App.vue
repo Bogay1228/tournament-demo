@@ -18,7 +18,7 @@
             min="2"
             max="64"
             class="count-input"
-            @input="clampCount"
+            @input="clampMax"
           />
           <p class="hint">2 ~ 64 人 · 實際 bracket 大小：{{ bracketSize }} 人（2 的冪次）</p>
         </div>
@@ -91,13 +91,17 @@ const bracketSize = computed(() => {
   return size
 })
 
-function clampCount() {
-  if (!playerCount.value || playerCount.value < 2) playerCount.value = 2
+function clampMax() {
   if (playerCount.value > 64) playerCount.value = 64
-  playerCount.value = Math.floor(playerCount.value)
+  if (playerCount.value) playerCount.value = Math.floor(playerCount.value)
 }
 
 async function generate(shuffle = false) {
+  const count = playerCount.value
+  if (!count || count < 2 || count > 64) {
+    alert('請輸入有效的參賽人數（2 ~ 64 人）')
+    return
+  }
   loading.value = true
   try {
     const names = playerNames.value.slice(0, playerCount.value)
