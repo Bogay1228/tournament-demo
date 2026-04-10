@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1>🏆 淘汰賽系統</h1>
+      <h1>🏆 三重陀螺宮陀螺賽淘汰賽系統</h1>
       <p class="subtitle">單淘汰制 · 兩人一組對決</p>
     </header>
 
