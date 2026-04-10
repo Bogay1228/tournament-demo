@@ -82,7 +82,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:rounds'])
 
-const SLOT_BASE = 80 // px — 第 0 輪每個 match 的 slot 高度
+const SLOT_BASE = 85 // px — 第 0 輪每個 match 的 slot 高度（多出 5px 作為卡片間距）
 
 const localRounds = ref(JSON.parse(JSON.stringify(props.rounds)))
 
