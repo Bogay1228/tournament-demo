@@ -1,0 +1,423 @@
+<template>
+  <div class="app">
+    <header class="header">
+      <h1>🏆 淘汰賽系統</h1>
+      <p class="subtitle">單淘汰制 · 兩人一組對決</p>
+    </header>
+
+    <!-- 設定區 -->
+    <div v-if="!bracket" class="setup-panel">
+      <div class="card">
+        <h2>建立賽事</h2>
+
+        <div class="field">
+          <label>參賽人數</label>
+          <div class="counter">
+            <button @click="decreaseCount" :disabled="playerCount <= 2">－</button>
+            <span class="count-display">{{ playerCount }}</span>
+            <button @click="increaseCount" :disabled="playerCount >= 64">＋</button>
+          </div>
+          <p class="hint">實際 bracket 大小：{{ bracketSize }} 人（2 的冪次）</p>
+        </div>
+
+        <div class="field">
+          <label>輸入選手名稱（選填）</label>
+          <div class="names-grid">
+            <div
+              v-for="i in playerCount"
+              :key="i"
+              class="name-input-wrapper"
+            >
+              <span class="name-index">{{ i }}</span>
+              <input
+                v-model="playerNames[i - 1]"
+                :placeholder="`Player ${i}`"
+                class="name-input"
+                maxlength="20"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-generate" @click="generate(false)" :disabled="loading">
+            <span v-if="loading">產生中...</span>
+            <span v-else>產生淘汰賽 →</span>
+          </button>
+          <button class="btn-random" @click="generate(true)" :disabled="loading">
+            🔀 產生隨機淘汰賽
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 對戰表 -->
+    <div v-else class="bracket-panel">
+      <div class="bracket-toolbar">
+        <div class="bracket-info">
+          <span>{{ bracket.totalPlayers }} 位選手</span>
+          <span class="sep">·</span>
+          <span>{{ bracket.rounds.length }} 輪</span>
+          <span class="sep">·</span>
+          <span>點擊選手選擇勝者</span>
+        </div>
+        <button class="btn-reset" @click="reset">重新設定</button>
+      </div>
+
+      <TournamentBracket
+        :rounds="bracket.rounds"
+        @update:rounds="onRoundsUpdate"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import axios from 'axios'
+import TournamentBracket from './components/TournamentBracket.vue'
+
+const playerCount = ref(8)
+const playerNames = ref(Array(64).fill(''))
+const bracket = ref(null)
+const loading = ref(false)
+
+const bracketSize = computed(() => {
+  let size = 1
+  while (size < playerCount.value) size *= 2
+  return size
+})
+
+function decreaseCount() {
+  if (playerCount.value > 2) playerCount.value--
+}
+
+function increaseCount() {
+  if (playerCount.value < 64) playerCount.value++
+}
+
+async function generate(shuffle = false) {
+  loading.value = true
+  try {
+    const names = playerNames.value.slice(0, playerCount.value)
+    const res = await axios.post('/api/tournament/generate', {
+      playerCount: playerCount.value,
+      playerNames: shuffle ? shuffled(names) : names
+    })
+    bracket.value = res.data
+  } catch (e) {
+    bracket.value = generateLocal(shuffle)
+  } finally {
+    loading.value = false
+  }
+}
+
+function shuffled(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function generateLocal(shuffle = false) {
+  const count = playerCount.value
+  let names = []
+  for (let i = 0; i < count; i++) {
+    names.push(playerNames.value[i]?.trim() || `Player ${i + 1}`)
+  }
+  if (shuffle) names = shuffled(names)
+
+  let size = 1
+  while (size < count) size *= 2
+  while (names.length < size) names.push('BYE')
+
+  const rounds = []
+  let matchId = 1
+
+  // Round 1
+  const firstRound = []
+  for (let i = 0; i < size; i += 2) {
+    firstRound.push({ matchId: matchId++, player1: names[i], player2: names[i + 1], winner: null })
+  }
+  rounds.push(firstRound)
+
+  // Remaining rounds
+  let matchesInRound = size / 4
+  while (matchesInRound >= 1) {
+    const round = []
+    for (let i = 0; i < matchesInRound; i++) {
+      round.push({ matchId: matchId++, player1: 'TBD', player2: 'TBD', winner: null })
+    }
+    rounds.push(round)
+    matchesInRound = Math.floor(matchesInRound / 2)
+  }
+
+  return { totalPlayers: count, bracketSize: size, rounds }
+}
+
+function onRoundsUpdate(newRounds) {
+  bracket.value = { ...bracket.value, rounds: newRounds }
+}
+
+function reset() {
+  bracket.value = null
+}
+</script>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #11111b;
+  color: #cdd6f4;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.header {
+  background: linear-gradient(135deg, #1e1e2e, #181825);
+  border-bottom: 1px solid #313244;
+  padding: 28px 40px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #cba6f7;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #6c7086;
+}
+
+/* 設定區 */
+.setup-panel {
+  max-width: 600px;
+  margin: 48px auto;
+  padding: 0 20px;
+}
+
+.card {
+  background: #1e1e2e;
+  border: 1px solid #313244;
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #cdd6f4;
+  margin-bottom: 28px;
+}
+
+.field {
+  margin-bottom: 28px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #a6adc8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.counter button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #45475a;
+  background: #181825;
+  color: #cdd6f4;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.counter button:hover:not(:disabled) {
+  background: #313244;
+  border-color: #6366f1;
+  color: #a6e3a1;
+}
+
+.counter button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.count-display {
+  font-size: 36px;
+  font-weight: 800;
+  color: #cba6f7;
+  min-width: 64px;
+  text-align: center;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #585b70;
+}
+
+.names-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.name-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #181825;
+  border: 1px solid #313244;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.name-index {
+  font-size: 11px;
+  color: #585b70;
+  width: 18px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.name-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #cdd6f4;
+  font-size: 13px;
+  width: 100%;
+}
+
+.name-input::placeholder {
+  color: #45475a;
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-generate {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-random {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid #45475a;
+  border-radius: 12px;
+  color: #a6adc8;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-random:hover:not(:disabled) {
+  border-color: #f9e2af;
+  color: #f9e2af;
+  background: rgba(249, 226, 175, 0.05);
+}
+
+.btn-generate:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-generate:active,
+.btn-random:active {
+  transform: translateY(0);
+}
+
+.btn-generate:disabled,
+.btn-random:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 對戰表 */
+.bracket-panel {
+  padding: 24px 32px;
+}
+
+.bracket-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bracket-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #a6adc8;
+}
+
+.sep {
+  color: #45475a;
+}
+
+.btn-reset {
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid #45475a;
+  border-radius: 8px;
+  color: #a6adc8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-reset:hover {
+  border-color: #f38ba8;
+  color: #f38ba8;
+}
+</style>
