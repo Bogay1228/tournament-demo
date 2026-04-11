@@ -382,7 +382,7 @@ body {
 .btn-generate {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
   border: none;
   border-radius: 12px;
   color: white;
@@ -395,34 +395,36 @@ body {
 .btn-random {
   width: 100%;
   padding: 14px;
-  background: transparent;
-  border: 1px solid #45475a;
+  background: linear-gradient(135deg, #f97316, #f59e0b);
+  border: none;
   border-radius: 12px;
-  color: #a6adc8;
+  color: white;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: opacity 0.2s, transform 0.1s;
 }
 
 .btn-random:hover:not(:disabled) {
-  border-color: #f9e2af;
-  color: #f9e2af;
-  background: rgba(249, 226, 175, 0.05);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .btn-vertical {
-  border-style: dashed;
+  border: none;
 }
 
 .btn-generate.btn-vertical {
-  background: linear-gradient(135deg, #1e6352, #2d7a5f);
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.btn-random.btn-vertical {
+  background: linear-gradient(135deg, #ec4899, #f43f5e);
 }
 
 .btn-random.btn-vertical:hover:not(:disabled) {
-  border-color: #94e2d5;
-  color: #94e2d5;
-  background: rgba(148, 226, 213, 0.05);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .btn-generate:hover:not(:disabled) {
