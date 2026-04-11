@@ -54,12 +54,18 @@
         </div>
 
         <div class="btn-group">
-          <button class="btn-generate" @click="generate(false)" :disabled="loading">
+          <button class="btn-generate" @click="generate(false, 'horizontal')" :disabled="loading">
             <span v-if="loading">產生中...</span>
             <span v-else>產生淘汰賽 →</span>
           </button>
-          <button class="btn-random" @click="generate(true)" :disabled="loading">
+          <button class="btn-random" @click="generate(true, 'horizontal')" :disabled="loading">
             🔀 產生隨機淘汰賽
+          </button>
+          <button class="btn-generate btn-vertical" @click="generate(false, 'vertical')" :disabled="loading">
+            產生淘汰賽 - 直列式 ↓
+          </button>
+          <button class="btn-random btn-vertical" @click="generate(true, 'vertical')" :disabled="loading">
+            🔀 產生隨機淘汰賽 - 直列式
           </button>
         </div>
       </div>
@@ -79,6 +85,12 @@
       </div>
 
       <TournamentBracket
+        v-if="bracketMode === 'horizontal'"
+        :rounds="bracket.rounds"
+        @update:rounds="onRoundsUpdate"
+      />
+      <TournamentBracketVertical
+        v-else
         :rounds="bracket.rounds"
         @update:rounds="onRoundsUpdate"
       />
@@ -90,10 +102,12 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
 import TournamentBracket from './components/TournamentBracket.vue'
+import TournamentBracketVertical from './components/TournamentBracketVertical.vue'
 
 const playerCount = ref(16)
 const playerNames = ref(Array(64).fill(''))
 const bracket = ref(null)
+const bracketMode = ref('horizontal')
 const loading = ref(false)
 
 const bracketSize = computed(() => {
@@ -107,7 +121,8 @@ function clampMax() {
   if (playerCount.value) playerCount.value = Math.floor(playerCount.value)
 }
 
-async function generate(shuffle = false) {
+async function generate(shuffle = false, mode = 'horizontal') {
+  bracketMode.value = mode
   const count = playerCount.value
   if (!count || count < 2 || count > 64) {
     alert('請輸入有效的參賽人數（2 ~ 64 人）')
@@ -359,8 +374,8 @@ body {
 }
 
 .btn-group {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
@@ -384,7 +399,7 @@ body {
   border: 1px solid #45475a;
   border-radius: 12px;
   color: #a6adc8;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -394,6 +409,20 @@ body {
   border-color: #f9e2af;
   color: #f9e2af;
   background: rgba(249, 226, 175, 0.05);
+}
+
+.btn-vertical {
+  border-style: dashed;
+}
+
+.btn-generate.btn-vertical {
+  background: linear-gradient(135deg, #1e6352, #2d7a5f);
+}
+
+.btn-random.btn-vertical:hover:not(:disabled) {
+  border-color: #94e2d5;
+  color: #94e2d5;
+  background: rgba(148, 226, 213, 0.05);
 }
 
 .btn-generate:hover:not(:disabled) {
