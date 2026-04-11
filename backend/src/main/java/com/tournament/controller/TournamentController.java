@@ -53,7 +53,7 @@ public class TournamentController {
         while (matchesInRound >= 1) {
             List<Match> round = new ArrayList<>();
             for (int i = 0; i < matchesInRound; i++) {
-                round.add(new Match(matchId++, "TBD", "TBD"));
+                round.add(new Match(matchId++, "未知", "未知"));
             }
             rounds.add(round);
             matchesInRound /= 2;

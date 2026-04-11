@@ -12,14 +12,25 @@
 
         <div class="field">
           <label>參賽人數</label>
-          <input
-            type="number"
-            v-model.number="playerCount"
-            min="2"
-            max="64"
-            class="count-input"
-            @input="clampMax"
-          />
+          <div class="count-row">
+            <input
+              type="number"
+              v-model.number="playerCount"
+              min="2"
+              max="64"
+              class="count-input"
+              @input="clampMax"
+            />
+            <div class="quick-btns">
+              <button
+                v-for="n in [8, 16, 32, 64]"
+                :key="n"
+                class="quick-btn"
+                :class="{ active: playerCount === n }"
+                @click="playerCount = n"
+              >{{ n }}</button>
+            </div>
+          </div>
           <p class="hint">2 ~ 64 人 · 實際 bracket 大小：{{ bracketSize }} 人（2 的冪次）</p>
         </div>
 
@@ -80,7 +91,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import TournamentBracket from './components/TournamentBracket.vue'
 
-const playerCount = ref(8)
+const playerCount = ref(16)
 const playerNames = ref(Array(64).fill(''))
 const bracket = ref(null)
 const loading = ref(false)
@@ -153,7 +164,7 @@ function generateLocal(shuffle = false) {
   while (matchesInRound >= 1) {
     const round = []
     for (let i = 0; i < matchesInRound; i++) {
-      round.push({ matchId: matchId++, player1: 'TBD', player2: 'TBD', winner: null })
+      round.push({ matchId: matchId++, player1: '未知', player2: '未知', winner: null })
     }
     rounds.push(round)
     matchesInRound = Math.floor(matchesInRound / 2)
@@ -242,6 +253,40 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 12px;
+}
+
+.count-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quick-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.quick-btn {
+  padding: 8px 14px;
+  background: #181825;
+  border: 1px solid #45475a;
+  border-radius: 8px;
+  color: #a6adc8;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.quick-btn:hover {
+  border-color: #6366f1;
+  color: #cdd6f4;
+}
+
+.quick-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
 }
 
 .count-input {

@@ -108,15 +108,37 @@ function getRoundLabel(index) {
 }
 
 function canClick(match, player) {
-  if (!player || player === 'TBD' || player === 'BYE') return false
-  return !match.winner
+  if (!player || player === '未知' || player === 'BYE') return false
+  return true // 永遠可點，支援重選
+}
+
+// 遞迴清除某選手在後續輪的進展
+function cascadeReset(roundIndex, matchIndex, player) {
+  if (roundIndex >= localRounds.value.length) return
+  const match = localRounds.value[roundIndex][matchIndex]
+  if (match.player1 === player) match.player1 = '未知'
+  if (match.player2 === player) match.player2 = '未知'
+  if (match.winner === player) {
+    match.winner = null
+    cascadeReset(roundIndex + 1, Math.floor(matchIndex / 2), player)
+  }
 }
 
 function selectWinner(roundIndex, matchIndex, winner) {
   const match = localRounds.value[roundIndex][matchIndex]
   if (!canClick(match, winner)) return
+  if (match.winner === winner) return // 點同一人不做事
+
+  const oldWinner = match.winner
+
+  // 舊勝者存在 → 清除後續進展
+  if (oldWinner) {
+    cascadeReset(roundIndex + 1, Math.floor(matchIndex / 2), oldWinner)
+  }
+
   match.winner = winner
 
+  // 推進新勝者到下一輪
   if (roundIndex + 1 < localRounds.value.length) {
     const next = localRounds.value[roundIndex + 1][Math.floor(matchIndex / 2)]
     if (matchIndex % 2 === 0) next.player1 = winner
